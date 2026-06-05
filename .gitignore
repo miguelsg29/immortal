@@ -23,3 +23,6 @@ keystore.properties
 # Built APKs / staged release artifacts and scratch screenshots.
 provisioning/apks/*.apk
 _chk*.png
+
+# Internal strategy/planning notes — never publish.
+_planning/

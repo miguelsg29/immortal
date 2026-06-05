@@ -24,13 +24,13 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:usesCleartextTraffic="true"
+        android:usesCleartextTraffic="false"
         android:theme="@style/Theme.SampleApp">
 
         <!-- Immortal launcher. Opens like any app from the stock home (LAUNCHER
              filter), and is ALSO eligible as the system home (HOME filter) for
-             the optional `cmd package set-home-activity` step. Its "Portal Home"
-             tile returns to the stock launcher, so nothing is hijacked. -->
+             the optional `cmd package set-home-activity` step. Its "Calls" tile
+             bridges to the stock launcher, so nothing is hijacked. -->
         <activity
             android:name=".HomeActivity"
             android:exported="true"
@@ -48,17 +48,19 @@
             </intent-filter>
         </activity>
 
-        <!-- App Store, launched from the launcher tile. -->
+        <!-- App Store, launched internally from the launcher tile (explicit
+             intent), so it isn't exported. -->
         <activity
             android:name=".StoreActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="App Store"
             android:theme="@style/Theme.SampleApp" />
 
-        <!-- Full-screen photo frame, launched from the Screensaver tile. -->
+        <!-- Full-screen photo frame, launched internally from the Screensaver
+             button (explicit intent), so it isn't exported. -->
         <activity
             android:name=".PhotoFramePreviewActivity"
-            android:exported="true"
+            android:exported="false"
             android:theme="@style/Theme.SampleApp" />
 
         <!-- Reaffirm our screensaver settings after boot (self-healing). -->

@@ -58,6 +58,15 @@ Release builds must be signed with the **same** key every time (in-place self-up
 signature-checked). Signing is configured via a git-ignored `keystore.properties`; keep that key
 backed up safely — losing it means devices can no longer self-update.
 
+## Disclaimer
+
+Immortal is an independent community project — **not affiliated with, endorsed
+by, or sponsored by Meta**. "Meta Portal" and "Portal" are trademarks of Meta
+Platforms, Inc., used here only to identify compatible hardware. Provisioning
+modifies device settings and is **use-at-your-own-risk** (reversible, but no
+guarantees; may void warranty). See [DISCLAIMER.md](DISCLAIMER.md) for the full
+text and privacy notes.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

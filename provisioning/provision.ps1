@@ -141,6 +141,38 @@ function Set-Screensaver {
   Ok "Screensaver = $($cfg["DREAM_SERVICE"])"
 }
 
+# ----- per-device stock snapshot (model-agnostic restore) --------------------
+# Written on the device the first time we provision, so restore works on any
+# Portal model and from any computer. config.env STOCK_* are only fallbacks.
+$StateFile = "/sdcard/immortal_restore.env"
+
+function Snapshot-Stock {
+  if ((A shell "[ -f $StateFile ] && echo yes").Trim() -eq "yes") { return }
+  $pkg = $cfg["PKG"]
+  $home = ((A shell 'cmd package query-activities --components -a android.intent.action.MAIN -c android.intent.category.HOME') -split "`n" |
+    ForEach-Object { $_.Trim() } |
+    Where-Object { $_ -match '^[A-Za-z0-9_.]+/' -and $_ -notmatch "^$pkg/" -and $_ -notmatch '^android/' -and $_ -notmatch '^com\.android\.settings/' } |
+    Select-Object -First 1)
+  if (-not $home) { $home = $cfg["STOCK_HOME"] }
+  $dream  = (A shell settings get secure screensaver_components).Trim()
+  $ddream = (A shell settings get secure screensaver_default_component).Trim()
+  if (-not $dream  -or $dream  -eq "null" -or $dream  -like "$pkg/*") { $dream  = $cfg["STOCK_DREAM"] }
+  if (-not $ddream -or $ddream -eq "null" -or $ddream -like "$pkg/*") { $ddream = $cfg["STOCK_DEFAULT_DREAM"] }
+  "STOCK_HOME=$home`nSTOCK_DREAM=$dream`nSTOCK_DEFAULT_DREAM=$ddream`n" | A shell "cat > $StateFile" | Out-Null
+  Ok "Saved this device's stock launcher/screensaver for restore"
+}
+
+function Load-State {
+  if ((A shell "[ -f $StateFile ] && echo yes").Trim() -ne "yes") {
+    Warn "No saved snapshot on device - using config.env fallbacks for restore"; return
+  }
+  foreach ($line in ((A shell cat $StateFile) -split "`n")) {
+    if ($line.Trim() -match '^(STOCK_HOME|STOCK_DREAM|STOCK_DEFAULT_DREAM)=(.+)$') {
+      $cfg[$Matches[1]] = $Matches[2].Trim()
+    }
+  }
+}
+
 # ----- modes -----------------------------------------------------------------
 if ($Status) {
   Wait-Device
@@ -159,6 +191,7 @@ if ($Status) {
 if ($Restore) {
   Write-Host "Portal Restore`n"
   Wait-Device
+  Load-State
   Step "Re-enabling Meta's install verifier"
   A shell pm enable $cfg["VERIFIER_PKG"] | Out-Null
   A shell settings put global package_verifier_enable 1 | Out-Null; Ok "Verifier restored"
@@ -166,7 +199,7 @@ if ($Restore) {
   foreach ($p in ($cfg["OTA_PACKAGES"] -split "\s+")) { A shell pm enable $p | Out-Null }
   Ok "OS updates restored"
   Step "Restoring stock launcher"
-  A shell cmd package set-home-activity $cfg["STOCK_HOME"] | Out-Null; Ok "Home restored"
+  A shell cmd package set-home-activity $cfg["STOCK_HOME"] | Out-Null; Ok "Home restored ($($cfg["STOCK_HOME"]))"
   Step "Restoring stock screensaver"
   A shell settings put secure screensaver_components $cfg["STOCK_DREAM"] | Out-Null
   A shell settings put secure screensaver_default_component $cfg["STOCK_DEFAULT_DREAM"] | Out-Null
@@ -185,6 +218,7 @@ Push-Assets
 Grant-Perms
 Disable-Verifier
 Disable-Ota
+Snapshot-Stock
 Set-Launcher
 Set-Screensaver
 A shell input keyevent KEYCODE_HOME | Out-Null

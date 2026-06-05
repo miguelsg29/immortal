@@ -29,6 +29,12 @@ die()  { printf "%sERROR:%s %s\n" "$R" "$N" "$1" >&2; exit 1; }
 # shellcheck disable=SC1091
 set -a; . ./config.env; set +a
 
+# Per-device snapshot of the ORIGINAL stock launcher/screensaver, written on the
+# device itself the first time we provision. Restore reads this so it works on
+# any Portal model (Go/Mini/Plus/TV/Gen-1) and from any computer — the hardcoded
+# STOCK_* in config.env are only fallbacks if this snapshot is missing.
+STATE_FILE=/sdcard/immortal_restore.env
+
 # ----- resolve adb (bundled -> PATH -> download) -----------------------------
 resolve_adb() {
   if [ -x "$SCRIPT_DIR/platform-tools/adb" ]; then ADB="$SCRIPT_DIR/platform-tools/adb"; return; fi
@@ -141,6 +147,47 @@ disable_ota() {
   ok "OS updates disabled"
 }
 
+snapshot_stock() {
+  # Record this device's real stock components for an accurate restore. Done
+  # once per device; a re-provision keeps the original values.
+  if a shell "[ -f $STATE_FILE ]" >/dev/null 2>&1; then return; fi
+  local home dream ddream
+  # The stock home is whichever HOME activity isn't ours, the system resolver, or
+  # Settings' fallback. query-activities lists them all as flattened components,
+  # so this is reliable across Portal models even with our launcher installed.
+  home="$(a shell 'cmd package query-activities --components -a android.intent.action.MAIN -c android.intent.category.HOME' 2>/dev/null \
+            | tr -d '\r' \
+            | grep -E '^[A-Za-z0-9_.]+/' \
+            | grep -v "^$PKG/" \
+            | grep -v '^android/' \
+            | grep -v '^com.android.settings/' \
+            | head -1)"
+  # Screensaver: the live setting is the stock dream on a first provision (we
+  # haven't overwritten it yet); guard against capturing ours on a re-run.
+  dream="$(a shell settings get secure screensaver_components 2>/dev/null | tr -d '\r')"
+  ddream="$(a shell settings get secure screensaver_default_component 2>/dev/null | tr -d '\r')"
+  [ -n "$home" ] || home="$STOCK_HOME"
+  case "$dream" in "$PKG"/*|""|null) dream="$STOCK_DREAM" ;; esac
+  case "$ddream" in "$PKG"/*|""|null) ddream="$STOCK_DEFAULT_DREAM" ;; esac
+  printf 'STOCK_HOME=%s\nSTOCK_DREAM=%s\nSTOCK_DEFAULT_DREAM=%s\n' "$home" "$dream" "$ddream" \
+    | a shell "cat > $STATE_FILE" 2>/dev/null
+  ok "Saved this device's stock launcher/screensaver for restore"
+}
+
+load_state() {
+  # Pull the per-device snapshot (if any) over the config fallbacks.
+  a shell "[ -f $STATE_FILE ]" >/dev/null 2>&1 || { warn "No saved snapshot on device — using config.env fallbacks for restore"; return; }
+  local key val
+  while IFS='=' read -r key val; do
+    val="$(printf '%s' "$val" | tr -d '\r')"
+    case "$key" in
+      STOCK_HOME) [ -n "$val" ] && STOCK_HOME="$val" ;;
+      STOCK_DREAM) [ -n "$val" ] && STOCK_DREAM="$val" ;;
+      STOCK_DEFAULT_DREAM) [ -n "$val" ] && STOCK_DEFAULT_DREAM="$val" ;;
+    esac
+  done < <(a shell cat "$STATE_FILE" 2>/dev/null)
+}
+
 set_launcher() {
   [ "${SET_LAUNCHER:-true}" = true ] || return
   step "Setting custom home launcher"
@@ -171,6 +218,7 @@ do_provision() {
   grant_perms
   disable_verifier
   disable_ota
+  snapshot_stock
   set_launcher
   set_screensaver
   a shell input keyevent KEYCODE_HOME >/dev/null 2>&1
@@ -182,13 +230,14 @@ do_restore() {
   printf "%sPortal Restore%s\n\n" "$B" "$N"
   resolve_adb
   wait_for_device
+  load_state # pull this device's real stock components (falls back to config)
   step "Re-enabling Meta's install verifier"
   a shell pm enable "$VERIFIER_PKG" >/dev/null 2>&1
   a shell settings put global package_verifier_enable 1 >/dev/null 2>&1; ok "Verifier restored"
   step "Re-enabling Meta OS updates"
   for p in $OTA_PACKAGES; do a shell pm enable "$p" >/dev/null 2>&1; done; ok "OS updates restored"
   step "Restoring stock launcher"
-  a shell cmd package set-home-activity "$STOCK_HOME" >/dev/null 2>&1; ok "Home restored"
+  a shell cmd package set-home-activity "$STOCK_HOME" >/dev/null 2>&1; ok "Home restored ($STOCK_HOME)"
   step "Restoring stock screensaver"
   a shell settings put secure screensaver_components "$STOCK_DREAM" >/dev/null 2>&1
   a shell settings put secure screensaver_default_component "$STOCK_DEFAULT_DREAM" >/dev/null 2>&1
