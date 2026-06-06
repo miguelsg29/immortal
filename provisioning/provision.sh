@@ -257,14 +257,13 @@ disable_ota() {
 }
 
 disable_presence() {
-  # Meta's presence service (camera-based "someone is nearby" detection) pokes
-  # the power manager every ~20s, which resets the sleep timer forever: on
-  # battery the device never actually sleeps (it just dreams until empty), and
-  # presence-triggered wakes bounce the screensaver back to the launcher. The
-  # stock Portal used it to wake its ambient frame; with Immortal it only burns
-  # battery. Reversible — restore re-enables it.
-  [ "${DISABLE_PRESENCE:-true}" = true ] || return
-  step "Disabling Meta's presence detector (lets the device sleep properly on battery)"
+  # OFF BY DEFAULT. The system uses Meta's presence detector to choose ambient
+  # vs sleep at the screen timeout (someone nearby → photos; empty room → real
+  # sleep), and Immortal cooperates with that. Disable only if you want the
+  # camera never used at all — the trade-off is the device can't tell an empty
+  # room from an occupied one. Reversible — restore re-enables it.
+  [ "${DISABLE_PRESENCE:-false}" = true ] || return
+  step "Disabling Meta's presence detector (camera off; loses empty-room sleep smarts)"
   a shell pm disable-user --user 0 "$PRESENCE_PKG" >/dev/null 2>&1
   ok "Presence detector disabled"
 }

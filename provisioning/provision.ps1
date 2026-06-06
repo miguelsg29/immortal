@@ -194,11 +194,11 @@ function Disable-Ota {
   Ok "OS updates disabled"
 }
 function Disable-Presence {
-  # Meta's presence detector pokes the power manager every ~20s: on battery the
-  # device never truly sleeps, and presence wakes bounce the screensaver back to
-  # the launcher. Reversible — restore re-enables it.
+  # OFF BY DEFAULT. The system uses presence to choose ambient vs sleep at the
+  # screen timeout, and Immortal cooperates with it. Disable only if you want
+  # the camera never used at all. Reversible — restore re-enables it.
   if ($cfg["DISABLE_PRESENCE"] -ne "true") { return }
-  Step "Disabling Meta's presence detector (lets the device sleep properly on battery)"
+  Step "Disabling Meta's presence detector (camera off; loses empty-room sleep smarts)"
   A shell pm disable-user --user 0 $cfg["PRESENCE_PKG"] | Out-Null
   Ok "Presence detector disabled"
 }

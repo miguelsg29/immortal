@@ -12,26 +12,28 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
 import android.os.PowerManager
-import android.provider.Settings
 import android.util.Log
 
 /**
- * Works around the Portal build's dream policy. Meta's modified PowerManager
- * force-wakes ANY third-party dream at `last-activity + min(screen_off + 120s,
- * sleep_timeout)` — a dream can never run indefinitely and never hands off to
- * sleep. (Stock Portal masked this: its SuperFrame app caught the wake, and the
- * presence service kept the device awake forever.)
+ * Cooperates with the Portal build's presence-driven power policy.
+ *
+ * How this build behaves (measured on device):
+ *  - At the screen timeout, Meta's PowerManager decides AMBIENT vs SLEEP from the
+ *    presence service: someone around → start the dream; empty room → real sleep.
+ *    (`screensaver_activate_on_sleep` is ignored.)
+ *  - A running dream is force-woken at `last-activity + min(screen_off + 120s,
+ *    sleep_timeout)` — dreams are transient by design; stock SuperFrame caught
+ *    that wake, so we must too.
  *
  * Immortal's policy:
  *  - When the system bounces the dream (not a user tap, not a power-button
- *    sleep), instantly relaunch the same frame as [PhotoFramePreviewActivity],
- *    which holds the screen on — the photo frame becomes permanent, as on a
- *    stock Portal. One brief flicker ~2 minutes in, then stable.
- *  - On battery models (Portal Go) with "pause on battery" enabled (default),
- *    the dream is gated by charge state instead: unplugged → screensaver off so
- *    the device reaches real sleep; plugged in → permanent frame as above.
- *    The gate writes `screensaver_activate_on_sleep`, which provisioning's
- *    WRITE_SECURE_SETTINGS grant allows.
+ *    sleep), instantly relaunch the same frame as [PhotoFramePreviewActivity].
+ *  - The frame HOLDS the screen on mains-powered Portals (and on the Go while
+ *    charging, or with the battery saver off) → permanent photo frame.
+ *  - On the Go on battery with the saver on, the frame does NOT hold the screen:
+ *    each screen timeout becomes a fresh presence decision — someone around →
+ *    the dream takes over again (visually identical, so it reads as one
+ *    continuous frame); empty room → the device truly sleeps.
  */
 object DreamPolicy {
   private const val TAG = "ImmortalDream"
@@ -55,24 +57,21 @@ object DreamPolicy {
           }
           .getOrDefault(true)
 
-  /** Pure decision (unit-tested): should the dream be enabled right now? */
-  internal fun dreamShouldBeEnabled(
+  /**
+   * Pure decision (unit-tested): should the frame hold the screen on?
+   * Holding means a permanent frame; not holding hands control back to the
+   * system's presence policy at every screen timeout.
+   */
+  internal fun holdScreenOn(
       hasBattery: Boolean,
       batterySaver: Boolean,
       powered: Boolean,
   ): Boolean = !hasBattery || !batterySaver || powered
 
   /** Pure decision (unit-tested): should a dream-stop relaunch the frame? */
-  internal fun shouldRelaunch(
-      userExitAgoMs: Long,
-      interactive: Boolean,
-      hasBattery: Boolean,
-      batterySaver: Boolean,
-      powered: Boolean,
-  ): Boolean {
+  internal fun shouldRelaunch(userExitAgoMs: Long, interactive: Boolean): Boolean {
     if (userExitAgoMs in 0..4000) return false // user tapped out of the dream
-    if (!interactive) return false // power button / real sleep — leave it be
-    return dreamShouldBeEnabled(hasBattery, batterySaver, powered)
+    return interactive // power button / real sleep — leave it be
   }
 
   /** Called on ACTION_DREAMING_STOPPED: continue the frame unless the user ended it. */
@@ -82,9 +81,6 @@ object DreamPolicy {
         shouldRelaunch(
             userExitAgoMs = System.currentTimeMillis() - userExitAt,
             interactive = pm?.isInteractive == true,
-            hasBattery = hasBattery(context),
-            batterySaver = ScreensaverConfig.load(context).batterySaver,
-            powered = isPowered(context),
         )
     Log.i(TAG, "dream stopped; relaunch frame = $relaunch")
     if (!relaunch) return
@@ -94,28 +90,5 @@ object DreamPolicy {
               .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP))
     }
         .onFailure { Log.w(TAG, "frame relaunch failed", it) }
-  }
-
-  /**
-   * Battery-saver gate: on battery models with the saver on, the screensaver only
-   * activates while charging; unplugged, the device idles into real sleep.
-   * No-ops without WRITE_SECURE_SETTINGS (provisioning grants it).
-   */
-  fun applyDreamGate(context: Context) {
-    val enable =
-        dreamShouldBeEnabled(
-            hasBattery = hasBattery(context),
-            batterySaver = ScreensaverConfig.load(context).batterySaver,
-            powered = isPowered(context),
-        )
-    runCatching {
-      val resolver = context.contentResolver
-      val current = Settings.Secure.getInt(resolver, "screensaver_activate_on_sleep", 1)
-      val want = if (enable) 1 else 0
-      if (current != want) {
-        Settings.Secure.putInt(resolver, "screensaver_activate_on_sleep", want)
-        Log.i(TAG, "dream gate: screensaver_activate_on_sleep=$want")
-      }
-    }
   }
 }

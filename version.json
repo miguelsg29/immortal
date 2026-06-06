@@ -1,6 +1,6 @@
 {
-  "versionCode": 20,
-  "versionName": "1.19",
+  "versionCode": 21,
+  "versionName": "1.20",
   "apkUrl": "https://github.com/starbrightlab/immortal/releases/latest/download/immortal.apk",
-  "notes": "Immortal 1.19 — the screensaver no longer bounces back to the launcher. Meta's power manager force-wakes any screensaver ~2 minutes in; Immortal now catches that and keeps the photo frame up permanently. On the Portal Go a new 'Pause screensaver on battery' setting (on by default) lets the device truly sleep when unplugged. Re-run the provisioning kit once to disable Meta's presence detector, which was also keeping devices awake all night."
+  "notes": "Immortal 1.20 — presence-native screensaver. Meta's presence detector stays enabled and Immortal now cooperates with it: while someone is nearby the photo frame runs uninterrupted; when the room empties, battery Portals go to sleep (configurable) and mains Portals keep the frame up. The kit no longer disables presence; re-run --restore-style re-enable or 'pm enable com.facebook.alohaservices.presence' if you applied v1.19."
 }

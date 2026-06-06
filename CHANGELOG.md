@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.20 (2026-06-06)
+
+Work WITH Meta's presence detection instead of disabling it.
+
+- v1.19 disabled the presence service to stop the screensaver bouncing and let the Go sleep — effective, but it removed stock functionality with possible unseen consumers. 1.20 re-enables presence and cooperates with it instead. Measured behavior: the system decides ambient-vs-sleep at the screen timeout from presence (someone nearby → screensaver, empty room → sleep), and presence activity extends the dream's force-wake deadline — so while someone is around, the frame runs uninterrupted with no bounce at all.
+- When the system does bounce the dream (room recently emptied, etc.), Immortal still relaunches the frame seamlessly. On mains-powered Portals the frame holds the screen → permanent photo frame. On the Portal Go with the (renamed) "Sleep on battery when nobody's around" setting on — the default — the frame doesn't hold the screen, so each timeout is a fresh presence decision: photos while occupied, real sleep when the room is empty.
+- The provisioning kit no longer disables the presence detector (DISABLE_PRESENCE now defaults to false; the option remains for camera-averse users, and restore re-enables it). If you ran the v1.19 kit, re-enable with: adb shell pm enable com.facebook.alohaservices.presence
+
 ## 1.19 (2026-06-06)
 
 Fix the screensaver bouncing back to the launcher (and devices never sleeping).

@@ -22,18 +22,18 @@ import androidx.core.view.WindowInsetsControllerCompat
 /**
  * Full-screen photo frame as a normal activity. Two jobs:
  *  - on-demand preview (Screensaver tile), and
- *  - the PERMANENT frame: when the system force-wakes the real screensaver
- *    (see [DreamPolicy]), this activity takes over and keeps the screen on, so
- *    the frame runs indefinitely like a stock Portal.
+ *  - the continuation frame: when the system force-wakes the real screensaver
+ *    (see [DreamPolicy]), this activity takes over seamlessly.
  *
- * Keep-screen-on policy: held whenever the device has no battery (mains-powered
- * Portals) or is charging or the user turned the battery saver off; on a
- * battery model that gets UNPLUGGED mid-frame with saver on, the frame exits so
- * the device can reach real sleep.
+ * Keep-screen-on policy: held on mains-powered Portals, while charging, or with
+ * the battery saver off → the frame is permanent. On the Go on battery with the
+ * saver on, the flag is NOT held: at each screen timeout the system's presence
+ * policy decides — someone around → the dream (same visuals) takes over again;
+ * empty room → the device truly sleeps. Plug/unplug just re-evaluates the flag.
  */
 class PhotoFramePreviewActivity : ComponentActivity() {
   private lateinit var frame: PhotoFrameController
-  private var unplugReceiver: BroadcastReceiver? = null
+  private var powerReceiver: BroadcastReceiver? = null
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -49,21 +49,15 @@ class PhotoFramePreviewActivity : ComponentActivity() {
     setContentView(frame.view)
     frame.start()
 
-    // Battery models, saver on: bow out when unplugged so the device can sleep.
     if (DreamPolicy.hasBattery(this)) {
-      unplugReceiver =
+      powerReceiver =
           object : BroadcastReceiver() {
             override fun onReceive(c: Context, intent: Intent) {
-              if (intent.action == Intent.ACTION_POWER_DISCONNECTED &&
-                  ScreensaverConfig.load(c).batterySaver) {
-                finish()
-              } else {
-                applyKeepScreenOn()
-              }
+              applyKeepScreenOn()
             }
           }
       registerReceiver(
-          unplugReceiver,
+          powerReceiver,
           IntentFilter().apply {
             addAction(Intent.ACTION_POWER_CONNECTED)
             addAction(Intent.ACTION_POWER_DISCONNECTED)
@@ -73,7 +67,7 @@ class PhotoFramePreviewActivity : ComponentActivity() {
 
   private fun applyKeepScreenOn() {
     val keep =
-        DreamPolicy.dreamShouldBeEnabled(
+        DreamPolicy.holdScreenOn(
             hasBattery = DreamPolicy.hasBattery(this),
             batterySaver = ScreensaverConfig.load(this).batterySaver,
             powered = DreamPolicy.isPowered(this),
@@ -90,7 +84,7 @@ class PhotoFramePreviewActivity : ComponentActivity() {
   }
 
   override fun onDestroy() {
-    unplugReceiver?.let { runCatching { unregisterReceiver(it) } }
+    powerReceiver?.let { runCatching { unregisterReceiver(it) } }
     if (this::frame.isInitialized) frame.stop()
     super.onDestroy()
   }

@@ -228,15 +228,15 @@ private fun ScreensaverSettingsScreen() {
         SectionLabel("Power")
         Surface(color = Color(0xFF1C1C1E), shape = RoundedCornerShape(18.dp)) {
           Column {
-            ToggleRow("Pause screensaver on battery", settings.batterySaver) {
+            ToggleRow("Sleep on battery when nobody's around", settings.batterySaver) {
               ScreensaverConfig.setBatterySaver(context, it)
               settings = settings.copy(batterySaver = it)
-              DreamPolicy.applyDreamGate(context)
             }
             Text(
-                "On: when unplugged, the Portal sleeps at the screen timeout instead of " +
-                    "showing photos (saves the battery). Off: the photo frame stays on " +
-                    "battery too. While charging, the frame always runs.",
+                "On: unplugged, the Portal keeps showing photos while someone is nearby " +
+                    "and goes to sleep when the room is empty (saves the battery). " +
+                    "Off: the photo frame stays on battery too. While charging, the " +
+                    "frame always runs.",
                 fontSize = 13.sp,
                 color = Color(0xFF9A9A9A),
                 modifier = Modifier.padding(start = 18.dp, end = 18.dp, bottom = 14.dp),
