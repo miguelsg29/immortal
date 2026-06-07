@@ -66,19 +66,24 @@ function A { & $ADB @args }
 function Wait-Device {
   Step "Looking for your Portal"
   A start-server | Out-Null
-  $plug=$false; $auth=$false; $multi=$false
+  $plug=$false; $auth=$false
   while ($true) {
     # adb refuses every command when more than one device is attached - without
     # this the run dies later at the first install with a bare "Install failed."
-    $devs = @(A devices | Select-Object -Skip 1 | Where-Object { $_ -match "\sdevice\s*$" } | ForEach-Object { ($_ -split "\s+")[0] })
+    # Offer a numbered pick-list (model + serial) instead.
+    $dlist = @(A devices -l | Select-Object -Skip 1 | Where-Object { $_ -match "^\S+\s+device\s" })
+    $devs = @($dlist | ForEach-Object { ($_ -split "\s+")[0] })
     if (-not $env:ANDROID_SERIAL -and $devs.Count -gt 1) {
-      if (-not $multi) {
-        Warn "More than one device is connected:"
-        A devices -l | Select-Object -Skip 1 | Where-Object { $_.Trim() } | ForEach-Object { Write-Host "      $_" }
-        $multi=$true
+      Warn "More than one device is connected - which one is this setup for?"
+      for ($i = 0; $i -lt $dlist.Count; $i++) {
+        $m = if ($dlist[$i] -match 'model:(\S+)') { $Matches[1] } else { 'unknown' }
+        Write-Host ("    {0}) {1}  ({2})" -f ($i + 1), $m, $devs[$i])
       }
-      $sel = Read-Host "  Type the serial of the Portal to set up (first column)"
-      if ($sel) { $env:ANDROID_SERIAL = $sel.Trim() }
+      do {
+        $sel = Read-Host "  Number"
+      } until ($sel -match '^\d+$' -and [int]$sel -ge 1 -and [int]$sel -le $devs.Count)
+      $env:ANDROID_SERIAL = $devs[[int]$sel - 1]
+      Ok "Using $($devs[[int]$sel - 1])"
       continue
     }
     if ($env:ANDROID_SERIAL) {

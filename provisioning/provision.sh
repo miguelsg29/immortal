@@ -65,7 +65,7 @@ a() { "$ADB" "$@"; }
 wait_for_device() {
   step "Looking for your Portal"
   a start-server >/dev/null 2>&1
-  local printed_plug=0 printed_auth=0 printed_adb=0 printed_multi=0
+  local printed_plug=0 printed_auth=0 printed_adb=0
   while true; do
     local line state devs n
     if [ -n "${ANDROID_SERIAL:-}" ]; then
@@ -79,19 +79,36 @@ wait_for_device() {
       if [ "$n" -gt 1 ]; then
         # adb refuses every command when more than one device is attached —
         # without this the run dies later at the first install with a bare
-        # "Install failed." Make the user pick up front instead.
-        if [ "$printed_multi" = 0 ]; then
-          warn "More than one device is connected:"
-          a devices -l | awk 'NR>1 && NF {print "      " $0}'
-          printed_multi=1
-        fi
-        if [ -t 0 ]; then
-          printf "  Type the serial of the Portal to set up (first column): "
-          read -r ANDROID_SERIAL || die "No serial given."
-          export ANDROID_SERIAL
-        else
-          die "Multiple devices are connected. Unplug the others, or re-run with ANDROID_SERIAL=<serial>."
-        fi
+        # "Install failed." Offer a numbered pick-list up front instead.
+        [ -t 0 ] || die "Multiple devices are connected. Unplug the others, or re-run with ANDROID_SERIAL=<serial>."
+        local dev_serials=() dev_labels=() dline dserial dmodel idx choice
+        while IFS= read -r dline; do
+          [ -n "$dline" ] || continue
+          dserial="${dline%% *}"
+          dmodel="$(printf "%s" "$dline" | sed -n 's/.*model:\([^ ]*\).*/\1/p')"
+          dev_serials+=("$dserial")
+          dev_labels+=("${dmodel:-unknown}  ($dserial)")
+        done <<EOF
+$(a devices -l | awk 'NR>1 && $2=="device"')
+EOF
+        warn "More than one device is connected — which one is this setup for?"
+        idx=1
+        for dline in "${dev_labels[@]}"; do
+          printf "    %s%d)%s %s\n" "$B" "$idx" "$N" "$dline"
+          idx=$((idx + 1))
+        done
+        while :; do
+          printf "  Number: "
+          read -r choice || die "No selection made."
+          case "$choice" in
+            *[!0-9]* | "") : ;;
+            *) [ "$choice" -ge 1 ] && [ "$choice" -le "${#dev_serials[@]}" ] && break ;;
+          esac
+          warn "Enter a number between 1 and ${#dev_serials[@]}."
+        done
+        ANDROID_SERIAL="${dev_serials[$((choice - 1))]}"
+        export ANDROID_SERIAL
+        ok "Using ${dev_labels[$((choice - 1))]}"
         continue
       elif [ "$n" = 1 ]; then
         # Pin the one authorized device so a second one appearing mid-run
