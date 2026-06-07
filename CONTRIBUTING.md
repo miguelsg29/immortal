@@ -33,8 +33,10 @@ provisioned release. The provisioning kit lives in [`provisioning/`](provisionin
 A few things worth knowing:
 
 - **Release builds must be signed with the same key every time** — in-place
-  self-update is signature-checked. Signing is configured via a git-ignored
-  `keystore.properties`; never commit a keystore.
+  self-update is signature-checked. Signing is configured via
+  `keystore.properties`, read from the repo root (git-ignored) or
+  `~/.immortal-signing/` (preferred — outside the working tree); never commit a
+  keystore.
 - **The Gen-1 Portal+ has a broken system installer.** On-device installs route
   through the shell-privileged daemon the kit starts; read the README's first-gen
   section and the comments in `InstallDaemon` / `ApkInstallActivity` / the

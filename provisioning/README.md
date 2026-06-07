@@ -21,6 +21,12 @@ Portal, and double-click.
 > macOS may warn that the file is from an unidentified developer. Right-click → Open the first
 > time, or remove the quarantine flag: `xattr -d com.apple.quarantine Provision-Portal.command`.
 
+> **Windows: "unblock" the downloaded files first.** Windows marks files downloaded from the
+> internet as blocked, which makes the PowerShell script error out. After extracting the release,
+> right-click the provisioning folder (or the individual files inside it) → **Properties** → check
+> **Unblock** at the bottom → OK. Or do it in one PowerShell command from inside the folder:
+> `Get-ChildItem -Recurse | Unblock-File`. (Thanks to a community member on Reddit for the tip.)
+
 No Android tools required — if `adb` isn't found, the script downloads Google's official
 platform-tools automatically into this folder.
 

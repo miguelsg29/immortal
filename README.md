@@ -126,8 +126,10 @@ Hosted from this repo:
   next open (a bundled copy ships as the offline fallback).
 
 Release builds must be signed with the **same** key every time (in-place self-update is
-signature-checked). Signing is configured via a git-ignored `keystore.properties`; keep that key
-backed up safely — losing it means devices can no longer self-update.
+signature-checked). Signing is configured via `keystore.properties`, which the build looks for
+first at the repo root (git-ignored) and then at `~/.immortal-signing/keystore.properties` — the
+recommended home, since nothing in a git working tree can be considered safe from cleanup. Keep
+that key backed up safely (e.g. iCloud) — losing it means devices can no longer self-update.
 
 ## Limitations (the honest list)
 

@@ -12,10 +12,15 @@ plugins {
   alias(libs.plugins.kotlin.compose)
 }
 
-// Release signing is configured only when keystore.properties exists (it's
-// git-ignored and kept off the repo). Every release MUST be signed with the same
-// key for in-place self-update to work, so guard this file carefully.
-val keystorePropsFile = rootProject.file("keystore.properties")
+// Release signing is configured only when keystore.properties exists. Every
+// release MUST be signed with the same key for in-place self-update to work, so
+// guard these files carefully. The canonical home is ~/.immortal-signing/ —
+// OUTSIDE the repo, so no git clean/restore/checkout can ever delete it. A copy
+// at the repo root (git-ignored) still works and takes precedence if present.
+// storeFile is resolved relative to whichever keystore.properties was found.
+val keystorePropsFile =
+    rootProject.file("keystore.properties").takeIf { it.exists() }
+        ?: File(System.getProperty("user.home"), ".immortal-signing/keystore.properties")
 val keystoreProps =
     Properties().apply { if (keystorePropsFile.exists()) keystorePropsFile.inputStream().use(::load) }
 
@@ -36,7 +41,7 @@ android {
   signingConfigs {
     if (keystorePropsFile.exists()) {
       create("release") {
-        storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
+        storeFile = File(keystorePropsFile.parentFile, keystoreProps.getProperty("storeFile"))
         storePassword = keystoreProps.getProperty("storePassword")
         keyAlias = keystoreProps.getProperty("keyAlias")
         keyPassword = keystoreProps.getProperty("keyPassword")
