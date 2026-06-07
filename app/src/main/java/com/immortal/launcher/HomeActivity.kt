@@ -642,10 +642,18 @@ private const val UPDATE_CHECK_INTERVAL_MS = 6L * 60 * 60 * 1000 // 6 hours
 private val LocalTileDp = compositionLocalOf { 88.dp }
 
 private fun tileDpFor(size: String): Dp =
-    if (size == ImmortalSettings.SIZE_LARGE) 110.dp else 88.dp
+    when (size) {
+      ImmortalSettings.SIZE_XL -> 140.dp
+      ImmortalSettings.SIZE_LARGE -> 110.dp
+      else -> 88.dp
+    }
 
 private fun gridColumnsFor(size: String): Int =
-    if (size == ImmortalSettings.SIZE_LARGE) 5 else 6
+    when (size) {
+      ImmortalSettings.SIZE_XL -> 4
+      ImmortalSettings.SIZE_LARGE -> 5
+      else -> 6
+    }
 
 @Composable
 private fun HeaderBar(onScreensaver: () -> Unit) {
@@ -1042,7 +1050,9 @@ private fun FolderOverlay(
         color = Color(0xFF1C1C1E),
         shape = RoundedCornerShape(28.dp),
         modifier =
-            Modifier.width(420.dp)
+            // The panel grows with the tile size (3 columns of LocalTileDp tiles
+            // must fit) — at 88dp this is the original 420dp.
+            Modifier.width(420.dp * (LocalTileDp.current / 88.dp))
                 .onGloballyPositioned { panel = it.boundsInWindow() }
                 .clickable(interactionSource = noRipple, indication = null) {},
     ) {

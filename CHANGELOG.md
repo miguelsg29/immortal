@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.27 (2026-06-06)
+
+Extra large app icons — by community request, for the Portal+'s big screen.
+
+- A third **App icon size** in Settings folder → Immortal: Extra large (4 columns of 140dp tiles). Standard and Large are unchanged.
+- Folder panels now grow with the chosen icon size so nothing clips at the bigger sizes.
+
 ## 1.26 (2026-06-06)
 
 Provisioning-kit fixes for Windows — the app is unchanged from 1.25.

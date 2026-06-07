@@ -148,6 +148,7 @@ private fun ImmortalSettingsScreen() {
                   listOf(
                       "Standard" to ImmortalSettings.SIZE_STANDARD,
                       "Large" to ImmortalSettings.SIZE_LARGE,
+                      "Extra large" to ImmortalSettings.SIZE_XL,
                   ),
               selected = settings.tileSize,
               onSelect = {

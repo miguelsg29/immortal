@@ -28,6 +28,7 @@ object ImmortalSettings {
   // Home-grid tile size.
   const val SIZE_STANDARD = "standard" // 6 columns, 88dp tiles (the original look)
   const val SIZE_LARGE = "large" // 5 columns, 110dp tiles (closer to the stock launcher)
+  const val SIZE_XL = "xl" // 4 columns, 140dp tiles (for the big-screen Portal+)
 
   data class Settings(
       val weatherUnit: String = UNIT_AUTO,
