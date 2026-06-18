@@ -302,7 +302,7 @@ class PhotoFrameController(
 
   /** Reflect the latest now-playing state (called on the main thread). */
   private fun updateNowPlaying(s: NowPlayingState?) {
-    if (s == null || !s.active) {
+    if (s == null || !s.active || !settings.showNowPlaying) {
       nowPlayingCard.visibility = View.GONE
       lastArtUrl = ""
       return

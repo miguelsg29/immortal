@@ -263,6 +263,29 @@ private fun ScreensaverSettingsScreen() {
         }
       }
 
+      // Music — only surfaced when the ImmortalCast companion is installed, so
+      // people who don't use multi-room audio never see an option that does nothing.
+      val castInstalled = remember { StoreCatalog.isInstalled(context, NowPlaying.COMPANION_PACKAGE) }
+      if (castInstalled) {
+        Spacer(Modifier.size(26.dp))
+        SectionLabel("Music")
+        Card {
+          ToggleRow("Show what's playing", settings.showNowPlaying) {
+            ScreensaverConfig.setShowNowPlaying(context, it)
+            settings = settings.copy(showNowPlaying = it)
+          }
+        }
+        Text(
+            "Show the current track and album art on the frame while ImmortalCast is playing " +
+                "synced music.",
+            color = Color(0xFF7C7C7C),
+            fontSize = 13.sp,
+            modifier = Modifier.padding(top = 10.dp, start = 4.dp, end = 4.dp),
+        )
+      }
+
+      Spacer(Modifier.size(26.dp))
+
       val hasBattery = remember { DreamPolicy.hasBattery(context) }
       SectionLabel("Power")
       Surface(color = Color(0xFF1C1C1E), shape = RoundedCornerShape(18.dp)) {

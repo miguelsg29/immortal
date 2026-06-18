@@ -22,6 +22,9 @@ import android.content.Intent
 object NowPlaying {
   const val ACTION_NOW_PLAYING = "com.immortal.launcher.NOW_PLAYING"
 
+  /** The ImmortalCast companion's package — present only if the user installed it. */
+  const val COMPANION_PACKAGE = "com.immortalcast"
+
   const val EXTRA_STATE = "state" // PlaybackState.name
   const val EXTRA_TITLE = "title"
   const val EXTRA_ARTIST = "artist"
