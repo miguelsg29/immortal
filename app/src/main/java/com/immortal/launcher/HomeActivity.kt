@@ -24,7 +24,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import android.content.pm.PackageInstaller
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
@@ -55,6 +57,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -842,12 +845,15 @@ private fun HeaderBar(onScreensaver: () -> Unit) {
       }
     }
     // Mini-player — sits in the left action cluster, only while something's playing.
+    // When shown it takes the flexible space (so its text uses the header width before
+    // it scrolls); otherwise a weight spacer pushes the weather/date to the right.
     val np = nowPlaying
     if (showMiniPlayer && np != null && np.active) {
-      Spacer(Modifier.size(14.dp))
-      MiniPlayer(np)
+      Spacer(Modifier.size(16.dp))
+      MiniPlayer(np, modifier = Modifier.weight(1f).padding(end = 16.dp))
+    } else {
+      Spacer(Modifier.weight(1f))
     }
-    Spacer(Modifier.weight(1f))
     Column(horizontalAlignment = Alignment.End) {
       Row(
           verticalAlignment = Alignment.CenterVertically,
@@ -873,17 +879,19 @@ private fun HeaderBar(onScreensaver: () -> Unit) {
 }
 
 /**
- * Home-header mini-player: the cover art itself is the play/pause control (tap to
- * toggle), with the title/artist alongside. Deliberately minimal and container-less
- * so it sits in the header like the clock/weather rather than as a bolted-on chip.
- * Driven by [NowPlayingHub] (the device's active media session).
+ * Home-header mini-player: the play/pause control is a round button the same size as
+ * the other header buttons, styled with the cover art (tap to toggle), with the
+ * title/artist alongside. The text takes the available header width and only scrolls
+ * (ticker) when a track genuinely overruns it. Driven by [NowPlayingHub].
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun MiniPlayer(state: NowPlayingState) {
-  val shape = RoundedCornerShape(11.dp)
-  Row(verticalAlignment = Alignment.CenterVertically) {
+private fun MiniPlayer(state: NowPlayingState, modifier: Modifier = Modifier) {
+  Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+    // The album art IS the play/pause button — same 56dp circle as the other header
+    // buttons, just filled with the cover instead of a flat tint.
     Box(
-        modifier = Modifier.size(46.dp).clip(shape).tvFocusable(shape) { NowPlayingHub.playPause() },
+        modifier = Modifier.size(56.dp).clip(CircleShape).tvFocusable(CircleShape) { NowPlayingHub.playPause() },
         contentAlignment = Alignment.Center,
     ) {
       val bmp = state.artBitmap
@@ -892,34 +900,32 @@ private fun MiniPlayer(state: NowPlayingState) {
             bitmap = bmp.asImageBitmap(),
             contentDescription = null,
             contentScale = ContentScale.Crop,
-            modifier = Modifier.size(46.dp),
+            modifier = Modifier.size(56.dp),
         )
       } else {
-        Box(Modifier.size(46.dp).background(Color(0x33FFFFFF)))
+        Box(Modifier.size(56.dp).background(Color(0x33FFFFFF)))
       }
-      // The cover doubles as the control: a faint scrim + play/pause hint over the art.
-      Box(Modifier.size(46.dp).background(Color(0x3D000000)), contentAlignment = Alignment.Center) {
+      Box(Modifier.size(56.dp).background(Color(0x3D000000)), contentAlignment = Alignment.Center) {
         PlayPauseGlyph(playing = state.state == PlaybackState.PLAYING)
       }
     }
-    Spacer(Modifier.size(13.dp))
-    Column(modifier = Modifier.widthIn(max = 240.dp)) {
+    Spacer(Modifier.size(14.dp))
+    Column(modifier = Modifier.weight(1f)) {
       Text(
           state.title,
           color = Color.White,
-          fontSize = 17.sp,
+          fontSize = 18.sp,
           fontWeight = FontWeight.Medium,
           maxLines = 1,
-          overflow = TextOverflow.Ellipsis,
+          modifier = Modifier.basicMarquee(),
       )
       if (state.artist.isNotBlank()) {
         Text(
             state.artist,
             color = Color(0xFFB6B6B6),
-            fontSize = 13.sp,
+            fontSize = 14.sp,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 1.dp),
+            modifier = Modifier.padding(top = 1.dp).basicMarquee(),
         )
       }
     }
