@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Meta Platforms, Inc. and affiliates.
+ * Copyright (c) 2026 Starbright Lab.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -184,10 +184,28 @@ object SettingsGuard {
       val cur = Settings.Secure.getString(cr, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: ""
       val parts = cur.split(':').filter { it.isNotBlank() && !it.equals(comp, ignoreCase = true) }
       val next = (if (on) parts + comp else parts).joinToString(":")
-      Settings.Secure.putString(cr, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, next)
+      // Assert the master accessibility flag even when the service list is unchanged — the list
+      // can survive a reboot with the master flag off, which would leave the service inactive.
+      // (This doesn't cause a rebind; only rewriting the service list does.)
       if (on) Settings.Secure.putInt(cr, Settings.Secure.ACCESSIBILITY_ENABLED, 1)
+      if (next == cur) return // service list already correct — don't rewrite it (avoids a rebind)
+      Settings.Secure.putString(cr, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, next)
       android.util.Log.i("ImmortalQuickBar", "BarWatch a11y ${if (on) "enabled" else "disabled"}")
     }
         .onFailure { android.util.Log.w("ImmortalQuickBar", "couldn't toggle BarWatch a11y", it) }
+  }
+
+  /**
+   * Keep [BarWatchService] enabled. It is baseline launcher infrastructure now — it backs the
+   * Calls→stock-home bridge (5 system Back presses via accessibility, the reliable way back to
+   * Meta's launcher), the phone remote, and the quick-button cluster. Enabled at app start
+   * ([ImmortalApp]) and reboot; requires `WRITE_SECURE_SETTINGS`, so a silent no-op without it
+   * (i.e. it effectively turns on only on provisioned devices). Idempotent.
+   *
+   * Note: the cluster overlay is gated separately on [QuickBarConfig.isEnabled] (in [QuickBar]),
+   * so the service being on doesn't, by itself, show the quick buttons.
+   */
+  fun reconcileBarWatch(context: Context) {
+    setBarWatchEnabled(context, true)
   }
 }

@@ -12,7 +12,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -42,7 +41,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -50,44 +48,44 @@ import androidx.lifecycle.LifecycleEventObserver
 import com.immortal.launcher.ui.theme.SampleAppTheme
 
 /**
- * "Set up from your phone" — shows the address of the on-device [LanSetupServer] so the user can
- * enter a photo source's details from a phone/laptop on the same Wi-Fi (real keyboard), and a live
- * status that flips when the form is submitted. The server runs only while this screen is foreground.
+ * "Control from your phone" — turns on the phone remote and shows a one-time PIN plus a
+ * scan-to-pair QR for the [RemoteRoutes] page served by the fleet agent. The remote is
+ * opt-in: opening this screen enables it ([RemotePairing.setEnabled]) and ensures the
+ * agent (its transport) is running. A fresh PIN is minted each time the screen resumes.
  */
-class LanSetupActivity : ComponentActivity() {
+class RemotePairActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    setContent { SampleAppTheme(darkTheme = true) { LanSetupScreen() } }
+    setContent { SampleAppTheme(darkTheme = true) { RemotePairScreen() } }
   }
 }
 
 @Composable
-private fun LanSetupScreen() {
+private fun RemotePairScreen() {
   val context = LocalContext.current
   val activity = context as? Activity
-  var savedLabel by remember { mutableStateOf<String?>(null) }
+  var pin by remember { mutableStateOf<String?>(null) }
   var url by remember { mutableStateOf<String?>(null) }
-  val server = remember { LanSetupServer(context) { label -> savedLabel = label } }
 
   val lifecycleOwner = LocalLifecycleOwner.current
   DisposableEffect(lifecycleOwner) {
     val obs =
         LifecycleEventObserver { _, e ->
-          when (e) {
-            Lifecycle.Event.ON_RESUME -> {
-              server.start()
-              val ip = LanSetupServer.lanIp()
-              url = if (ip != null && server.port > 0) "http://$ip:${server.port}" else null
-            }
-            Lifecycle.Event.ON_PAUSE -> server.stop()
-            else -> {}
+          if (e == Lifecycle.Event.ON_RESUME) {
+            RemotePairing.setEnabled(context, true)
+            // Nav buttons drive global actions through BarWatchService, which is NOT enabled
+            // by provisioning — turn it on now (reconcile keeps it shared with quick buttons).
+            SettingsGuard.reconcileBarWatch(context)
+            FleetAgentService.ensureRunning(context) // the remote rides on the agent
+            val fresh = RemotePairing.newPin()
+            pin = fresh
+            val ip = lanIp()
+            url =
+                if (ip != null) "http://$ip:${FleetConfig.port(context)}/remote/ui" else null
           }
         }
     lifecycleOwner.lifecycle.addObserver(obs)
-    onDispose {
-      lifecycleOwner.lifecycle.removeObserver(obs)
-      server.stop()
-    }
+    onDispose { lifecycleOwner.lifecycle.removeObserver(obs) }
   }
 
   Column(
@@ -99,19 +97,13 @@ private fun LanSetupScreen() {
                   true
                 } else false
               }
-              .background(Color(0xFF101012))
               .padding(horizontal = 28.dp, vertical = 40.dp),
   ) {
     Column(modifier = Modifier.widthIn(max = 900.dp)) {
+      Text("Control from your phone", color = Color.White, fontSize = 34.sp, fontWeight = FontWeight.SemiBold)
       Text(
-          "Set up from your phone",
-          color = Color.White,
-          fontSize = 34.sp,
-          fontWeight = FontWeight.SemiBold,
-      )
-      Text(
-          "Open this address in a browser on a phone or computer on the same Wi-Fi, then enter " +
-              "your source's details there — no typing on the Portal.",
+          "Use a phone or tablet on the same Wi-Fi as a remote for this Portal — nav buttons and " +
+              "an app launcher, no extra app to install.",
           color = Color(0xFF9A9A9A),
           fontSize = 16.sp,
           modifier = Modifier.padding(top = 6.dp),
@@ -121,15 +113,17 @@ private fun LanSetupScreen() {
       if (url == null) {
         Card {
           Text(
-              "Connect your Portal to Wi-Fi to use this. You can still enter the details on the " +
-                  "Portal directly.",
+              "Connect your Portal to Wi-Fi to use the remote.",
               color = Color(0xFFE0A0A0),
               fontSize = 17.sp,
               modifier = Modifier.padding(20.dp),
           )
         }
       } else {
-        val qr = remember(url) { url?.let { lanSetupQr(it, 600) } }
+        // The QR carries the PIN in the URL fragment so scanning auto-pairs; the page
+        // still shows manual PIN entry for anyone who opens the address by hand.
+        val pairUrl = remember(url, pin) { url + (pin?.let { "#pin=$it" } ?: "") }
+        val qr = remember(pairUrl) { lanSetupQr(pairUrl, 600) }
         Card {
           Column(
               modifier = Modifier.fillMaxWidth().padding(24.dp),
@@ -140,52 +134,32 @@ private fun LanSetupScreen() {
               Surface(color = Color.White, shape = RoundedCornerShape(12.dp), modifier = Modifier.padding(top = 14.dp)) {
                 Image(
                     bitmap = qr.asImageBitmap(),
-                    contentDescription = "Setup QR code",
+                    contentDescription = "Remote pairing QR code",
                     modifier = Modifier.padding(12.dp).size(240.dp),
                 )
               }
             }
+            Text("or open $url and enter the code", color = Color(0xFF9A9A9A), fontSize = 14.sp, modifier = Modifier.padding(top = 18.dp))
             Text(
-                "or open this address",
-                color = Color(0xFF9A9A9A),
-                fontSize = 14.sp,
-                modifier = Modifier.padding(top = 18.dp),
-            )
-            Text(
-                url!!,
+                pin ?: "------",
                 color = Color.White,
-                fontSize = 30.sp,
+                fontSize = 44.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Monospace,
-                modifier = Modifier.padding(top = 4.dp),
+                modifier = Modifier.padding(top = 8.dp),
             )
+            Text("Code expires in a few minutes", color = Color(0xFF7C7C7C), fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp))
           }
         }
       }
 
-      Spacer(Modifier.size(20.dp))
-      Card {
-        Text(
-            if (savedLabel != null) "✓  Received — your Portal is now using ${savedLabel}."
-            else "Waiting for your phone…",
-            color = if (savedLabel != null) Color(0xFF8FE08F) else Color(0xFFBBBBBB),
-            fontSize = 18.sp,
-            modifier = Modifier.padding(20.dp),
-        )
-      }
-
       Spacer(Modifier.size(28.dp))
-      Surface(
-          color = Color(0xFF2E6BE6),
-          shape = RoundedCornerShape(14.dp),
-          modifier = Modifier.fillMaxWidth(),
-      ) {
+      Surface(color = Color(0xFF2E6BE6), shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
         Text(
-            if (savedLabel != null) "Done" else "Close",
+            "Done",
             color = Color.White,
             fontSize = 17.sp,
             fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth().tvFocusableRow { activity?.finish() }.padding(vertical = 16.dp),
         )
       }
@@ -195,11 +169,7 @@ private fun LanSetupScreen() {
 
 @Composable
 private fun Card(content: @Composable () -> Unit) {
-  Surface(
-      color = Color(0xFF1C1C1E),
-      shape = RoundedCornerShape(18.dp),
-      modifier = Modifier.fillMaxWidth(),
-  ) {
+  Surface(color = Color(0xFF1C1C1E), shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
     content()
   }
 }
