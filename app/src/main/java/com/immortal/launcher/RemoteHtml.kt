@@ -126,7 +126,16 @@ object RemoteHtml {
   .discovered button{padding:10px 14px;font-size:14px;background:#1c1c1e;color:#fff;border-radius:10px}
 
   /* Generic settings (rendered from the /remote/settings schema). */
-  .setsec{color:#9a9a9a;font-size:13px;font-weight:600;margin:18px 2px 4px}
+  .setsec{display:flex;align-items:baseline;justify-content:space-between;color:#9a9a9a;font-size:13px;font-weight:600;margin:18px 2px 4px}
+  .setsubsec{color:#7c7c7c;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin:14px 2px 2px}
+  .resetlink{background:none;color:#8ab4f8;font-size:12px;font-weight:600}
+  .profbtn{font-size:13px;padding:6px 12px;border-radius:10px;background:#2a2a2c;color:#cfcfcf}
+  .profbtn.del{color:#e0908a}
+  .profsave{margin-top:12px;font-size:14px;padding:12px;width:100%;border-radius:12px;background:#1c1c1e;color:#fff}
+  .scopebar{display:flex;align-items:center;gap:8px;margin:0 2px 6px;flex-wrap:wrap}
+  .scopebar .lbl{font-size:13px;color:#9a9a9a}
+  .scopebar button{font-size:12px;padding:6px 12px;border-radius:14px;background:#2a2a2c;color:#cfcfcf}
+  .scopebar button.on{background:#2e6be6;color:#fff}
   .setrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 2px;border-bottom:1px solid #1a1a1c}
   .setrow.col{flex-direction:column;align-items:stretch;gap:8px}
   .setrow .t{font-size:15px;color:#fff}
@@ -231,27 +240,30 @@ object RemoteHtml {
           <div id=addErr class=err></div>
         </div>
       </div>
-      <div class=label>Screensaver &amp; calendar</div>
-      <div class=editor>
-        <label class=pick><input type=radio name=src value=default onclick="showSrc('default')"> Default photo feed</label>
-        <label class=pick><input type=radio name=src value=immich onclick="showSrc('immich')"> Immich server</label>
-        <label class=pick><input type=radio name=src value=smb onclick="showSrc('smb')"> Network share (NAS)</label>
-        <label class=pick><input type=radio name=src value=dav onclick="showSrc('dav')"> WebDAV folder</label>
-        <label class=pick><input type=radio name=src value=web onclick="showSrc('web')"> Web page</label>
-        <label class=pick><input type=radio name=src value=album onclick="showSrc('album')"> Shared album link</label>
-        <div class=srcf id=f_immich><input id=immichUrl placeholder="Immich URL (http://192.168.x.x:2283)"><input id=immichKey placeholder="API key"></div>
-        <div class=srcf id=f_smb><input id=smbHost placeholder="Host or IP"><input id=smbShare placeholder="Share name"><input id=smbPath placeholder="Folder path (optional)"><input id=smbUser placeholder="Username (optional)"><input id=smbPass type=password placeholder="Password (optional)"></div>
-        <div class=srcf id=f_dav><input id=davUrl placeholder="WebDAV URL"><input id=davUser placeholder="Username (optional)"><input id=davPass type=password placeholder="Password (optional)"></div>
-        <div class=srcf id=f_web><input id=webUrl placeholder="Web page URL"></div>
-        <div class=srcf id=f_album><input id=albumUrl placeholder="iCloud or Google Photos share link"></div>
-        <h3>Calendar feed (optional)</h3>
-        <input id=calUrl placeholder="Public ICS link (Google or Apple)">
-        <button class=primary onclick=saveSources()>Save</button>
-        <div id=srcErr class=err></div>
-      </div>
     </div>
 
-    <div id=tabSettings class="panel scroll hide"></div>
+    <div id=tabSettings class="panel scroll hide">
+      <div id=settingsList></div>
+      <div id=srcPanel class=hide>
+        <button class=link onclick=closeSrcPanel()>&lsaquo; Back to settings</button>
+        <div class=label>Photo source</div>
+        <div class=editor>
+          <label class=pick><input type=radio name=src value=default onclick="showSrc('default')"> Default photo feed</label>
+          <label class=pick><input type=radio name=src value=immich onclick="showSrc('immich')"> Immich server</label>
+          <label class=pick><input type=radio name=src value=smb onclick="showSrc('smb')"> Network share (NAS)</label>
+          <label class=pick><input type=radio name=src value=dav onclick="showSrc('dav')"> WebDAV folder</label>
+          <label class=pick><input type=radio name=src value=web onclick="showSrc('web')"> Web page</label>
+          <label class=pick><input type=radio name=src value=album onclick="showSrc('album')"> Shared album link</label>
+          <div class=srcf id=f_immich><input id=immichUrl placeholder="Immich URL (http://192.168.x.x:2283)"><input id=immichKey placeholder="API key"></div>
+          <div class=srcf id=f_smb><input id=smbHost placeholder="Host or IP"><input id=smbShare placeholder="Share name"><input id=smbPath placeholder="Folder path (optional)"><input id=smbUser placeholder="Username (optional)"><input id=smbPass type=password placeholder="Password (optional)"></div>
+          <div class=srcf id=f_dav><input id=davUrl placeholder="WebDAV URL"><input id=davUser placeholder="Username (optional)"><input id=davPass type=password placeholder="Password (optional)"></div>
+          <div class=srcf id=f_web><input id=webUrl placeholder="Web page URL"></div>
+          <div class=srcf id=f_album><input id=albumUrl placeholder="iCloud or Google Photos share link"></div>
+          <button class=primary onclick=saveSources()>Save</button>
+          <div id=srcErr class=err></div>
+        </div>
+      </div>
+    </div>
 
     <div id=tabMedia class="panel scroll hide">
       <div id=npEmpty class=npempty>Nothing playing right now.</div>
@@ -281,7 +293,7 @@ object RemoteHtml {
       <button id=tb_apps onclick="showTab('apps')">Apps</button>
       <button id=tb_media onclick="showTab('media')">Media</button>
       <button id=tb_settings onclick="showTab('settings')">Settings</button>
-      <button id=tb_setup onclick="showTab('setup')">Setup</button>
+      <button id=tb_setup onclick="showTab('setup')">Devices</button>
     </div>
   </div>
 
@@ -373,24 +385,64 @@ object RemoteHtml {
       document.getElementById('tb_'+t).classList.toggle('on',t===name);
     });
     if(name==='apps'){loadApps();loadPresets();}
-    if(name==='setup'){loadSources();}
-    if(name==='settings'){loadSettings();}
+    if(name==='settings'){closeSrcPanel();loadSettings();}
     if(name==='media')startNowPlaying();else stopNowPlaying();
   }
   // --- generic settings (rendered from the declarative /remote/settings schema) ---
+  // Apply scope: 'this' = the active Portal only; 'all' = every paired Portal (fleet broadcast).
+  var setScope='this';
+  var lastSchema=null; // most recent /remote/settings response, for capturing profiles
+  function setScopeTo(s){setScope=s;loadSettings();}
+  function renderScopeBar(){
+    var n=devicesList().length;
+    if(n<2)return null; // only meaningful with more than one paired Portal
+    var bar=document.createElement('div');bar.className='scopebar';
+    var l=document.createElement('span');l.className='lbl';l.textContent='Apply to';bar.appendChild(l);
+    [['this','This Portal'],['all','All '+n+' Portals']].forEach(function(o){
+      var b=document.createElement('button');b.textContent=o[1];if(setScope===o[0])b.className='on';
+      b.onclick=function(){setScopeTo(o[0]);};bar.appendChild(b);
+    });
+    return bar;
+  }
   function loadSettings(){
-    var c=document.getElementById('tabSettings');c.innerHTML='<div class=none>Loading…</div>';
+    var c=document.getElementById('settingsList');c.innerHTML='<div class=none>Loading…</div>';
     api('/remote/settings').then(function(d){
+      lastSchema=d;
       c.innerHTML='';
+      var sb=renderScopeBar();if(sb)c.appendChild(sb);
+      // Photo source is the screensaver's one credentialed setting — a nav row into its editor.
+      var pr=document.createElement('div');pr.className='setrow';pr.style.cursor='pointer';
+      pr.onclick=openSrcPanel;
+      pr.innerHTML='<div class=t>Photo source</div><div style="color:#7c7c7c;font-size:18px">&rsaquo;</div>';
+      c.appendChild(pr);
       var doms=(d.settings&&d.settings.domains)||[];
-      if(!doms.length){c.innerHTML='<div class=none>No settings available.</div>';return;}
+      if(!doms.length){c.appendChild(Object.assign(document.createElement('div'),{className:'none',textContent:'No settings available.'}));return;}
       doms.forEach(function(dom){var sec=document.createElement('div');sec.id='dom_'+dom.id;c.appendChild(sec);renderDomain(sec,dom);});
+      c.appendChild(renderProfiles());
     }).catch(function(){c.innerHTML='<div class=none>Couldn\'t load settings.</div>';});
   }
+  function openSrcPanel(){document.getElementById('settingsList').classList.add('hide');document.getElementById('srcPanel').classList.remove('hide');loadSources();}
+  function closeSrcPanel(){var p=document.getElementById('srcPanel');if(p)p.classList.add('hide');var l=document.getElementById('settingsList');if(l)l.classList.remove('hide');}
   function renderDomain(sec,dom){
     sec.innerHTML='';
-    var h=document.createElement('div');h.className='setsec';h.textContent=dom.title;sec.appendChild(h);
-    (dom.controls||[]).forEach(function(ctl){sec.appendChild(renderControl(dom.id,ctl));});
+    var h=document.createElement('div');h.className='setsec';
+    var ti=document.createElement('span');ti.textContent=dom.title;h.appendChild(ti);
+    if((dom.controls||[]).some(function(c){return c['default']!==undefined;})){
+      var rl=document.createElement('button');rl.className='resetlink';rl.textContent='Reset';
+      rl.onclick=function(){resetDomain(dom);};h.appendChild(rl);
+    }
+    sec.appendChild(h);
+    // Group controls by their schema-declared section (first-appearance order); ungrouped first.
+    var groups=[],idx={};
+    (dom.controls||[]).forEach(function(ctl){
+      var k=ctl.section||'';
+      if(!(k in idx)){idx[k]=groups.length;groups.push({name:ctl.section||null,items:[]});}
+      groups[idx[k]].items.push(ctl);
+    });
+    groups.forEach(function(g){
+      if(g.name){var sl=document.createElement('div');sl.className='setsubsec';sl.textContent=g.name;sec.appendChild(sl);}
+      g.items.forEach(function(ctl){sec.appendChild(renderControl(dom.id,ctl));});
+    });
   }
   function renderControl(domId,ctl){
     var row=document.createElement('div');row.className='setrow';
@@ -423,9 +475,63 @@ object RemoteHtml {
   // gating (e.g. overnight start/end appearing) and clamped values reflect immediately.
   function setPut(domId,key,value){
     var vals={};vals[key]=value;
-    api('/remote/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({domain:domId,values:vals})})
+    var body=JSON.stringify({domain:domId,values:vals});
+    // Fleet broadcast: push the same change to the other paired Portals (fire-and-forget); the
+    // active one is handled by api() below, which also re-renders from its response.
+    if(setScope==='all'){
+      var act=active();
+      devicesList().forEach(function(dv){
+        if(act&&dv.base===act.base)return;
+        fetch(dv.base+'/remote/settings',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+dv.token},body:body}).catch(function(){});
+      });
+    }
+    api('/remote/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:body})
       .then(function(d){if(d&&d.domain){var sec=document.getElementById('dom_'+domId);if(sec)renderDomain(sec,d.domain);}})
       .catch(function(){});
+  }
+  function resetDomain(dom){
+    var vals={};
+    (dom.controls||[]).forEach(function(c){if(c['default']!==undefined)vals[c.key]=c['default'];});
+    api('/remote/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({domain:dom.id,values:vals})})
+      .then(function(d){if(d&&d.domain){var sec=document.getElementById('dom_'+dom.id);if(sec)renderDomain(sec,d.domain);}}).catch(function(){});
+  }
+  // --- profiles: named snapshots of every setting, kept on the phone (localStorage) ---
+  function profilesGet(){try{return JSON.parse(localStorage.getItem('immortal_remote_profiles')||'{}');}catch(e){return {};}}
+  function profilesSet(p){localStorage.setItem('immortal_remote_profiles',JSON.stringify(p));}
+  function captureProfile(){
+    var snap={};
+    ((lastSchema&&lastSchema.settings&&lastSchema.settings.domains)||[]).forEach(function(dom){
+      var v={};(dom.controls||[]).forEach(function(c){if(c.type!=='info')v[c.key]=c.value;});snap[dom.id]=v;
+    });
+    return snap;
+  }
+  function saveProfile(){
+    var name=(prompt('Name this settings profile')||'').trim();if(!name)return;
+    var p=profilesGet();p[name]=captureProfile();profilesSet(p);loadSettings();
+  }
+  function applyProfile(name){
+    var prof=profilesGet()[name];if(!prof)return;
+    Object.keys(prof).forEach(function(domId){
+      var body=JSON.stringify({domain:domId,values:prof[domId]});
+      if(setScope==='all'){var act=active();devicesList().forEach(function(dv){if(act&&dv.base===act.base)return;fetch(dv.base+'/remote/settings',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+dv.token},body:body}).catch(function(){});});}
+      api('/remote/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:body}).catch(function(){});
+    });
+    setTimeout(loadSettings,300);
+  }
+  function deleteProfile(name){var p=profilesGet();delete p[name];profilesSet(p);loadSettings();}
+  function renderProfiles(){
+    var wrap=document.createElement('div');
+    var h=document.createElement('div');h.className='setsec';var hs=document.createElement('span');hs.textContent='Profiles';h.appendChild(hs);wrap.appendChild(h);
+    Object.keys(profilesGet()).forEach(function(n){
+      var row=document.createElement('div');row.className='setrow';
+      var t=document.createElement('div');t.className='t';t.textContent=n;row.appendChild(t);
+      var btns=document.createElement('div');btns.style.display='flex';btns.style.gap='8px';
+      var ap=document.createElement('button');ap.className='profbtn';ap.textContent='Apply';ap.onclick=function(){applyProfile(n);};
+      var dl=document.createElement('button');dl.className='profbtn del';dl.textContent='Delete';dl.onclick=function(){deleteProfile(n);};
+      btns.appendChild(ap);btns.appendChild(dl);row.appendChild(btns);wrap.appendChild(row);
+    });
+    var save=document.createElement('button');save.className='profsave';save.textContent='Save current settings as a profile…';save.onclick=saveProfile;wrap.appendChild(save);
+    return wrap;
   }
   // --- now playing (media controls) ---
   // Inline SVG (not Unicode ▶/⏸) so the controls render as crisp monochrome glyphs everywhere —
@@ -586,14 +692,12 @@ object RemoteHtml {
       setVal('smbHost',s.smbHost);setVal('smbShare',s.smbShare);setVal('smbPath',s.smbPath);setVal('smbUser',s.smbUser);setVal('smbPass',s.smbPass);
       setVal('davUrl',s.davUrl);setVal('davUser',s.davUser);setVal('davPass',s.davPass);
       setVal('webUrl',s.webUrl);setVal('albumUrl',s.albumUrl);
-      setVal('calUrl',(d.calendar&&d.calendar.url)||'');
       showSrc(src);
     }).catch(function(){});
   }
   function saveSources(){
     var src=(document.querySelector('input[name=src]:checked')||{}).value||'default';
     var body={source:src};
-    var cal=gv('calUrl');if(cal)body.calendarUrl=cal; // only send when set, so a blank field can't wipe an existing feed
     if(src==='immich'){body.immichUrl=gv('immichUrl');body.immichKey=gv('immichKey');}
     else if(src==='smb'){body.smbHost=gv('smbHost');body.smbShare=gv('smbShare');body.smbPath=gv('smbPath');body.smbUser=gv('smbUser');body.smbPass=gv('smbPass');}
     else if(src==='dav'){body.davUrl=gv('davUrl');body.davUser=gv('davUser');body.davPass=gv('davPass');}
