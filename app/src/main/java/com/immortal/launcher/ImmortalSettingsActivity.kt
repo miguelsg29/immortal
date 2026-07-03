@@ -182,6 +182,32 @@ private fun ImmortalSettingsScreen() {
 
       RemoteNavRow()
 
+      FeatureSettingsNavRow(
+          "Sounds", "Chimes & spoken time",
+          "Hourly chime, spoken time, golden-hour tone, quiet hours") {
+            context.startActivity(Intent(context, ChimeSettingsActivity::class.java))
+          }
+      FeatureSettingsNavRow(
+          "Welcome overlay", "Welcome-back greeting",
+          "A time-of-day greeting when the screensaver starts") {
+            context.startActivity(Intent(context, WelcomeSettingsActivity::class.java))
+          }
+      FeatureSettingsNavRow(
+          "Digital clock", "Clock screensaver",
+          "Show a large digital clock as the screensaver") {
+            context.startActivity(Intent(context, ClockSettingsActivity::class.java))
+          }
+      FeatureSettingsNavRow(
+          "Sleep & idle", "Screen-off timers",
+          "Idle timeout and the overnight sleep window") {
+            context.startActivity(Intent(context, SleepSettingsActivity::class.java))
+          }
+      FeatureSettingsNavRow(
+          "Wake-up light", "Sunrise alarm",
+          "Brighten the screen gradually at a set time") {
+            context.startActivity(Intent(context, SunriseSettingsActivity::class.java))
+          }
+
       QuickButtonsSection()
 
       Spacer(Modifier.size(26.dp))
@@ -533,6 +559,40 @@ private fun QuickButtonsSection() {
       fontSize = 13.sp,
       modifier = Modifier.padding(top = 10.dp, start = 4.dp, end = 4.dp),
   )
+}
+
+/**
+ * A settings-menu row that opens a fork feature's own settings Activity (chime, welcome, digital
+ * clock, sleep, sunrise). Mirrors [MqttNavRow]'s section-label + card + chevron styling. These
+ * screens are already registered SettingsDomains (so they also render on the phone remote); this
+ * is the on-device link into each one — see docs/design/feature-integration.md, step 2.
+ */
+@Composable
+private fun FeatureSettingsNavRow(
+    section: String,
+    title: String,
+    subtitle: String,
+    onOpen: () -> Unit,
+) {
+  Spacer(Modifier.size(26.dp))
+  SectionLabel(section)
+  Card {
+    Row(
+        modifier = Modifier.fillMaxWidth().tvFocusableRow { onOpen() }.padding(18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Column(modifier = Modifier.weight(1f)) {
+        Text(title, color = Color.White, fontSize = 17.sp)
+        Text(
+            subtitle,
+            color = Color(0xFF9A9A9A),
+            fontSize = 13.sp,
+            modifier = Modifier.padding(top = 2.dp),
+        )
+      }
+      Text("›", color = Color(0xFF7C7C7C), fontSize = 26.sp)
+    }
+  }
 }
 
 /**
