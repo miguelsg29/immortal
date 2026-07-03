@@ -522,20 +522,19 @@ function Restore-Alexa {
   A shell am start -n $setup | Out-Null
   Warn "If this Portal isn't linked yet, an Amazon sign-in is now on screen - go to amazon.com/code and enter the code shown (you can do this while the rest of setup runs)."
 
-  # 4. millennium = the "hey" wake-word app (drives falcon hands-free).
-  # It keeps a background mic listener. Because that can interfere with Messenger
-  # calls on at least one Gen-1 Portal+, make it explicit opt-in and remove our
-  # previously installed copy when the option is off.
+  # 4. millennium = the "hey" wake-word app (drives falcon hands-free). ON by default: the current
+  # build cooperatively yields the mic during calls, so the old #86 Messenger-call interference is
+  # addressed. Opt out per-device with INSTALL_ALEXA_WAKE_WORD=false (then we remove our copy).
   $mp = if ($cfg["MILLENNIUM_PKG"]) { $cfg["MILLENNIUM_PKG"] } else { "com.millennium" }
-  $installWake = $cfg["INSTALL_ALEXA_WAKE_WORD"] -eq "true"
+  $installWake = $cfg["INSTALL_ALEXA_WAKE_WORD"] -ne "false"
   if ($installWake) {
     Update-Hey $work   # force the current build over any existing install (see Update-Hey)
   } else {
-    Step "Skipping the hey (millennium) wake-word app"
+    Step "Skipping the hey (millennium) wake-word app (INSTALL_ALEXA_WAKE_WORD=false)"
     if ("$(A shell pm path $mp)".Trim()) {
       A uninstall $mp | Out-Null; Ok "millennium removed"
     }
-    Warn "Wake word is off by default because its always-on mic can break Messenger call audio on Gen-1 Portal+ (#86). Set INSTALL_ALEXA_WAKE_WORD=true in config.env to opt in."
+    Warn "Wake word disabled for this device. It's on by default now that hey yields the mic during calls (the old Gen-1 Portal+ Messenger issue, #86); set INSTALL_ALEXA_WAKE_WORD=true to re-enable."
   }
 
   # 5. Wait for ReadyState - EVENT-DRIVEN, not on a timer. falcon logs `AccountRegisteredCondition:
@@ -566,7 +565,7 @@ function Restore-Alexa {
       if ("$(A shell pm path $mp)".Trim()) { A shell am start -n "$mp/com.millennium.ui.HeyActivity" | Out-Null }
       Ok "Alexa connected (ReadyState) - say 'Hey Alexa, what's the weather?'"
     } else {
-      Ok "Alexa connected (ReadyState); wake word left off for Messenger call compatibility"
+      Ok "Alexa connected (ReadyState); wake word disabled for this device"
     }
     Write-Host "  Once linked, you can hide falcon's icon from the launcher - it runs headless." -ForegroundColor DarkGray
   } else {

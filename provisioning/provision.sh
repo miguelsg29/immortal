@@ -20,7 +20,7 @@
 #   ./provision.sh --wifi-adb on-demand raw adb-over-WiFi for shell/scrcpy (temp;
 #                             pauses Shizuku, resets on reboot)
 #   ./provision.sh --alexa    restore the original Amazon Alexa app; the "hey"
-#                             wake word is a separate config opt-in
+#                             wake word installs by default (config opt-out)
 #   ./provision.sh --update-hey  refresh just the "hey" wake-word app to the current
 #                             release (no ~115 MB falcon re-download); leaves falcon as-is
 
@@ -664,20 +664,19 @@ restore_alexa() {
   a shell am start -n "$SETUP" >/dev/null 2>&1
   printf "  %sIf this Portal isn't linked yet, an Amazon sign-in is now on screen — go to amazon.com/code\n  and enter the code shown. You can do this while the rest of setup runs.%s\n" "$Y" "$N"
 
-  # 4. millennium = the "hey" wake-word app (drives falcon hands-free).
-  # It keeps a background mic listener. Because that can interfere with Messenger
-  # calls on at least one Gen-1 Portal+, make it explicit opt-in and remove our
-  # previously installed copy when the option is off.
+  # 4. millennium = the "hey" wake-word app (drives falcon hands-free). ON by default: the current
+  #    build cooperatively yields the mic during calls, so the old #86 Messenger-call interference
+  #    is addressed. Opt out per-device with INSTALL_ALEXA_WAKE_WORD=false (then we remove our copy).
   local MP="${MILLENNIUM_PKG:-com.millennium}"
-  local install_wake="${INSTALL_ALEXA_WAKE_WORD:-false}"
-  if [ "$install_wake" = true ]; then
+  local install_wake="${INSTALL_ALEXA_WAKE_WORD:-true}"
+  if [ "$install_wake" != false ]; then
     update_hey "$work"   # force the current build over any existing install (see update_hey)
   else
-    step "Skipping the hey (millennium) wake-word app"
+    step "Skipping the hey (millennium) wake-word app (INSTALL_ALEXA_WAKE_WORD=false)"
     if a shell pm path "$MP" >/dev/null 2>&1; then
       a uninstall "$MP" >/dev/null 2>&1 && ok "millennium removed" || warn "Couldn't remove millennium"
     fi
-    warn "Wake word is off by default because its always-on mic can break Messenger call audio on Gen-1 Portal+ (#86). Set INSTALL_ALEXA_WAKE_WORD=true in config.env to opt in."
+    warn "Wake word disabled for this device. It's on by default now that hey yields the mic during calls (the old Gen-1 Portal+ Messenger issue, #86); set INSTALL_ALEXA_WAKE_WORD=true to re-enable."
   fi
 
   # 5. Wait for ReadyState — EVENT-DRIVEN, not on a timer. falcon is already on screen (3b).
@@ -708,11 +707,11 @@ restore_alexa() {
     sleep 5; i=$((i + 1))
   done
   if [ "$ready" = 1 ]; then
-    if [ "$install_wake" = true ]; then
+    if [ "$install_wake" != false ]; then
       a shell pm path "$MP" >/dev/null 2>&1 && a shell am start -n "$MP/com.millennium.ui.HeyActivity" >/dev/null 2>&1
       ok "Alexa connected (ReadyState) — say \"Hey Alexa, what's the weather?\""
     else
-      ok "Alexa connected (ReadyState); wake word left off for Messenger call compatibility"
+      ok "Alexa connected (ReadyState); wake word disabled for this device"
     fi
     printf "  %sOnce linked, you can hide falcon's icon from the launcher — it runs headless.%s\n" "$D" "$N"
   else
