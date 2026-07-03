@@ -1,6 +1,6 @@
 {
-  "versionCode": 53,
-  "versionName": "1.52",
+  "versionCode": 54,
+  "versionName": "1.60",
   "apkUrl": "https://github.com/starbrightlab/immortal/releases/latest/download/immortal.apk",
-  "notes": "The launcher now uses the full screen width by default on the larger landscape Portals. A new \"Constrain page width\" setting (off by default) restores the previous capped, centred layout if you prefer it."
+  "notes": "A big one. A new Tools screen collects utilities in one place \u2014 kitchen timers, sticky and voice notes, a unit/currency converter, ISS pass times, an aurora outlook, an internet speed test, RTSP cameras, a reading lamp, bedtime stories, and a Wi-Fi intercom to another Portal. The screensaver gains an ambient almanac line, a digital-clock face, a sunrise wake-light, and installable calendar packs (Romanian name-days and Orthodox feasts, Irish holidays, prayer times). Plus hourly chimes with spoken time and quiet hours, a welcome overlay, a back-gesture service, and a tidier settings layout where every feature is reachable from one place."
 }
