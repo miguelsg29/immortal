@@ -1,6 +1,6 @@
 {
-  "versionCode": 56,
-  "versionName": "1.62",
+  "versionCode": 57,
+  "versionName": "1.63",
   "apkUrl": "https://github.com/starbrightlab/immortal/releases/latest/download/immortal.apk",
-  "notes": "Screensaver dismiss fix: the continuation frame now re-reads its launch intent when relaunched onto a live instance (singleTask), so 'open when dismissed' and the MQTT interactive publish work on every cycle, not just the first (#146, #103)."
+  "notes": "On-device media cache for the screensaver: Immich and WebDAV sources can now keep a screen-sized copy of each photo and video on the device and replay it locally, cutting repeat downloads from your server. Off by default \u2014 turn it on under Screensaver settings ('Store media on this device'). WebDAV sources can now play videos too."
 }
