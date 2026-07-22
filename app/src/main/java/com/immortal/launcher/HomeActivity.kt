@@ -2949,6 +2949,8 @@ private fun WidgetPickerOverlay(
     onPick: (WidgetProviderEntry) -> Unit,
     onDismiss: () -> Unit,
 ) {
+  val context = androidx.compose.ui.platform.LocalContext.current
+  val userLang = ImmortalSettings.load(context).language
   val noRipple = remember { MutableInteractionSource() }
   BackHandler { onDismiss() }
   val gridFocus = remember { FocusRequester() }
@@ -2979,9 +2981,9 @@ private fun WidgetPickerOverlay(
       Column(modifier = Modifier.padding(28.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
           Column(modifier = Modifier.weight(1f)) {
-            Text("Add widget", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.SemiBold)
+            Text(com.immortal.launcher.i18n.I18n.translate("Add widget", userLang), color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.SemiBold)
             Text(
-                "Choose a widget provider installed on this Portal.",
+                com.immortal.launcher.i18n.I18n.translate("Choose a widget provider installed on this Portal.", userLang),
                 color = Color(0xFF9A9A9A),
                 fontSize = 14.sp,
                 modifier = Modifier.padding(top = 4.dp),
@@ -2997,7 +2999,7 @@ private fun WidgetPickerOverlay(
         }
         if (status != null) {
           Text(
-              status,
+              com.immortal.launcher.i18n.I18n.translate(status, userLang),
               color = Color(0xFF8AB4F8),
               fontSize = 13.sp,
               modifier = Modifier.padding(top = 14.dp),
@@ -3010,7 +3012,7 @@ private fun WidgetPickerOverlay(
               contentAlignment = Alignment.Center,
           ) {
             Text(
-                "No widget providers are installed.",
+                com.immortal.launcher.i18n.I18n.translate("No widget providers are installed.", userLang),
                 color = Color(0xFFB8B8B8),
                 fontSize = 16.sp,
             )
@@ -3023,7 +3025,7 @@ private fun WidgetPickerOverlay(
               modifier = Modifier.focusRequester(gridFocus).focusGroup(),
           ) {
             items(providers, key = { it.info?.provider?.flattenToString() ?: "custom:${it.customKind}" }) { provider ->
-              WidgetProviderTile(provider = provider, onClick = { onPick(provider) })
+              WidgetProviderTile(provider = provider, userLang = userLang, onClick = { onPick(provider) })
             }
           }
         }
@@ -3033,7 +3035,7 @@ private fun WidgetPickerOverlay(
 }
 
 @Composable
-private fun WidgetProviderTile(provider: WidgetProviderEntry, onClick: () -> Unit) {
+private fun WidgetProviderTile(provider: WidgetProviderEntry, userLang: String? = null, onClick: () -> Unit) {
   Surface(
       color = Color(0xFF29292C),
       shape = RoundedCornerShape(18.dp),
@@ -3064,7 +3066,7 @@ private fun WidgetProviderTile(provider: WidgetProviderEntry, onClick: () -> Uni
       }
       Column(modifier = Modifier.padding(start = 14.dp).weight(1f)) {
         Text(
-            provider.label,
+            com.immortal.launcher.i18n.I18n.translate(provider.label, userLang),
             color = Color.White,
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold,
