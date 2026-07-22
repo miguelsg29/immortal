@@ -183,6 +183,7 @@ object I18n {
       "No widget providers are installed." -> "No hay proveedores de widgets instalados."
       "Widget unavailable" -> "Widget no disponible"
       "Custom timer" -> "Temporizador personalizado"
+      "Digital World Clock" -> "Reloj mundial digital"
       "Close" -> "Cerrar"
       "Save" -> "Guardar"
       "Back" -> "Volver"
